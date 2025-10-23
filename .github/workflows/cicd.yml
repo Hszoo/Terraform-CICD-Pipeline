@@ -1,7 +1,8 @@
 name: Full CICD - Destroy → Apply → Deploy
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ staging ]
 
 env:
   AWS_REGION: us-east-2

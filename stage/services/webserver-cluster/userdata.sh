@@ -1,18 +1,24 @@
 #!/bin/bash
+set -e
+
+# 1️⃣ 시스템 업데이트 및 CodeDeploy Agent 설치
 sudo yum update -y
 sudo yum install -y ruby wget
 
 cd /home/ec2-user
 sudo wget https://aws-codedeploy-us-east-2.s3.us-east-2.amazonaws.com/latest/install
 sudo chmod +x ./install
-./install auto
+sudo ./install auto
 
 sudo systemctl enable --now codedeploy-agent
-sudo systemctl start codedeploy-agent
 
-cat > index.html <<EOF
-<!DOCTYPE html>
-<html lang="ko">
+# 2️⃣ Apache 웹 서버 설치 및 시작
+sudo yum install -y httpd
+sudo systemctl enable --now httpd
+
+# 3️⃣ 메인 페이지 생성
+sudo tee /var/www/html/index.html > /dev/null <<EOF
+<!DOCTYPE html><html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -61,4 +67,5 @@ cat > index.html <<EOF
 </html>
 EOF
 
-nohup busybox httpd -f -p ${server_port} &
+# 4️⃣ 방화벽 허용 
+sudo systemctl restart httpd

@@ -6,7 +6,7 @@ terraform {
   }
   backend "s3" {
     bucket         = "cicd-bucket-2000-0903-0909"
-    key            = "global/s3/terraform.tfstate"
+    key            = "stage/mysql/terraform.tfstate"
     region         = "us-east-2"
     dynamodb_table = "cicdDynamodbTable"
     encrypt        = true

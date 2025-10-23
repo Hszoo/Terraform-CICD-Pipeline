@@ -1,4 +1,4 @@
-name: Full CICD - Destroy → Apply → Deploy
+name: Terraform CICD
 
 on:
   push:
@@ -24,12 +24,11 @@ jobs:
         with:
           terraform_version: 1.9.3
 
-      - name: 💣 Destroy All Terraform Resources
-        run: bash scripts/terraform-destroy.sh
-
+      # ⚙️ 인프라 프로비저닝
       - name: ⚙️ Apply All Terraform Resources
         run: bash scripts/terraform-apply.sh
 
+      # 🐳 Docker 빌드 & 배포
       - name: 🐳 Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2

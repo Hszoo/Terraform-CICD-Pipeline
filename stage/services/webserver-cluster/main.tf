@@ -40,7 +40,7 @@ data "aws_subnets" "default" {
 ## TG (Target Group)
 resource "aws_lb_target_group" "lb_tg" {
   name     = "my-cicd-alb-tg"
-  port     = 8080
+  port     = 80
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.default.id
 
@@ -53,39 +53,50 @@ resource "aws_lb_target_group" "lb_tg" {
     healthy_threshold   = 2
     unhealthy_threshold = 2
   }
+  
 }
 
 ## Security Group
 resource "aws_security_group" "allow_http_traffic_sg" {
-  name        = "allow_8080"
-  description = "Allow 8080 inbound traffic and all outbound traffic"
+  name        = "allow_80"
+  description = "Allow 80 inbound traffic and all outbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
   tags = {
-    Name = "allow_8080"
+    Name = "allow_80"
   }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "allow_8080_ingress_ipv4" {
+resource "aws_vpc_security_group_ingress_rule" "ec2_allow_80_ingress_ipv4" {
   security_group_id = aws_security_group.allow_http_traffic_sg.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 8080
-  to_port           = 8080
+  from_port         = 80
+  to_port           = 80
   ip_protocol       = "tcp"
 }
 
-resource "aws_vpc_security_group_egress_rule" "allow_8080_egress_ipv4" {
+resource "aws_vpc_security_group_egress_rule" "ec2_80_egress_ipv4" {
   security_group_id = aws_security_group.allow_http_traffic_sg.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
 
-## Remote state
+## remote state for CICD (IAM)
 data "terraform_remote_state" "cicd_remote_state" {
   backend = "s3"
   config = {
     bucket = "cicd-bucket-2000-0903-0909"
     key    = "cicd/terraform.tfstate"
+    region = "us-east-2"
+  }
+}
+
+## remote state for MySQL
+data "terraform_remote_state" "mysql_remote_state" {
+  backend = "s3"
+  config = {
+    bucket = "cicd-bucket-2000-0903-0909"
+    key    = "stage/mysql/terraform.tfstate"
     region = "us-east-2"
   }
 }
@@ -102,9 +113,9 @@ resource "aws_launch_template" "ec2_lt" {
   }
 
   user_data = base64encode(templatefile("userdata.sh", {
-    db_address = data.terraform_remote_state.cicd_remote_state.outputs.db_address
-    db_port = data.terraform_remote_state.cicd_remote_state.outputs.db_port
-    server_port = 8080
+    db_address  = data.terraform_remote_state.mysql_remote_state.outputs.db_address
+    db_port     = data.terraform_remote_state.mysql_remote_state.outputs.db_port
+    server_port = 80
   }))
 
   lifecycle {
@@ -148,7 +159,7 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "allow_80_ingress_ipv4" {
+resource "aws_vpc_security_group_ingress_rule" "alb_allow_80_ingress_ipv4" {
   security_group_id = aws_security_group.alb_sg.id
   cidr_ipv4         = "0.0.0.0/0"
   from_port         = 80
@@ -156,7 +167,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_80_ingress_ipv4" {
   ip_protocol       = "tcp"
 }
 
-resource "aws_vpc_security_group_egress_rule" "allow_80_egress_ipv4" {
+resource "aws_vpc_security_group_egress_rule" "alb_allow_80_egress_ipv4" {
   security_group_id = aws_security_group.alb_sg.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"

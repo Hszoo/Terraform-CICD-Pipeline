@@ -21,10 +21,4 @@ terraform init -input=false
 terraform destroy -auto-approve
 cd - >/dev/null
 
-echo "💣 Destroying Global S3..."
-cd global/s3
-terraform init -input=false
-terraform destroy -auto-approve
-cd - >/dev/null
-
 echo "✅ All Terraform resources destroyed successfully!"

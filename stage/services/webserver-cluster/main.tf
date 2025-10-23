@@ -1,11 +1,3 @@
-##############################################
-# ALB - TargetGroup(:ASG) Attachment - EC2 
-##############################################
-# 1) VPC, Subnet
-# 2) TG, SG, Launch Template, ASG
-# 3) ALB, ALB Listener, ALB Listener Rules
-##############################################
-
 terraform {
   required_providers {
     aws = {
@@ -13,10 +5,10 @@ terraform {
     }
   }
   backend "s3" {
-    bucket         = "cicd-bucket-2000-0903-0909"
+    bucket         = "terraform-remote-bucket-hszoo"
     key            = "stage/service/terraform.tfstate"
     region         = "us-east-2"
-    dynamodb_table = "cicdDynamodbTable"
+    dynamodb_table = "terraform-remote-table-hszoo"
     encrypt        = true
   }
 }
@@ -24,29 +16,6 @@ terraform {
 provider "aws" {
   # Configuration options
   region = "us-east-2"
-}
-
-data "terraform_remote_state" "cicd" {
-  backend = "s3"
-  config = {
-    bucket = "cicd-bucket-2000-0903-0909"
-    key    = "cicd/terraform.tfstate"
-    region = "us-east-2"
-  }
-}
-
-locals {
-  env    = data.terraform_remote_state.cicd.outputs.env
-  suffix = data.terraform_remote_state.cicd.outputs.suffix
-}
-
-variable "env" {
-  type    = string
-  default = "svc"
-}
-
-resource "random_id" "suffix" {
-  byte_length = 4
 }
 
 # 1) VPC, Subnet
@@ -69,7 +38,7 @@ data "aws_subnets" "default" {
 ## Target Group
 ## TG (Target Group)
 resource "aws_lb_target_group" "lb_tg" {
-  name     = "${local.env}-alb-tg-${local.suffix}"
+  name     = "hb05-alb-tg"
   port     = 80
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.default.id
@@ -88,7 +57,7 @@ resource "aws_lb_target_group" "lb_tg" {
 
 ## Security Group
 resource "aws_security_group" "allow_http_traffic_sg" {
-  name        = "${local.env}-allow_80-${local.suffix}"
+  name        = "hb05-sg-allow_80"
   description = "Allow 80 inbound traffic and all outbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -115,7 +84,7 @@ resource "aws_vpc_security_group_egress_rule" "ec2_80_egress_ipv4" {
 data "terraform_remote_state" "cicd_remote_state" {
   backend = "s3"
   config = {
-    bucket = "cicd-bucket-2000-0903-0909"
+    bucket = "terraform-remote-bucket-hszoo"
     key    = "cicd/terraform.tfstate"
     region = "us-east-2"
   }
@@ -125,7 +94,7 @@ data "terraform_remote_state" "cicd_remote_state" {
 data "terraform_remote_state" "mysql_remote_state" {
   backend = "s3"
   config = {
-    bucket = "cicd-bucket-2000-0903-0909"
+    bucket = "terraform-remote-bucket-hszoo"
     key    = "stage/mysql/terraform.tfstate"
     region = "us-east-2"
   }
@@ -133,7 +102,7 @@ data "terraform_remote_state" "mysql_remote_state" {
 
 ## Launch Template
 resource "aws_launch_template" "ec2_lt" {
-  name = "${local.env}-launchTemplate-${local.suffix}"
+  name = "hb05-launch-template"
   image_id = "ami-0199d4b5b8b4fde0e"
   instance_type = "t3.micro"
   vpc_security_group_ids = [aws_security_group.allow_http_traffic_sg.id]
@@ -171,7 +140,7 @@ resource "aws_autoscaling_group" "ec2_asg" {
 
   tag {
     key                 = "Name"
-    value               = "cicd-asg"
+    value               = "hb05-asg"
     propagate_at_launch = true
   }
 }
@@ -180,7 +149,7 @@ resource "aws_autoscaling_group" "ec2_asg" {
 
 ## ALB Security Group 
 resource "aws_security_group" "alb_sg" {
-  name        = "${local.env}-alb-SG-${local.suffix}"
+  name        = "hb05-alb-sg"
   description = "Allow 80 inbound traffic and all outbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -205,7 +174,7 @@ resource "aws_vpc_security_group_egress_rule" "alb_allow_80_egress_ipv4" {
 
 ## ALB (Application Load Balancer) 
 resource "aws_lb" "ec2_lb" {
-  name               = "${local.env}-alb-${local.suffix}"
+  name               = "hb05-alb"
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = data.aws_subnets.default.ids

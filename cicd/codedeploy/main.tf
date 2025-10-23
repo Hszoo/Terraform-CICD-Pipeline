@@ -4,13 +4,13 @@ variable "codedeploy_role_arn" {
 }
 
 resource "aws_codedeploy_app" "codedeploy_app" {
-  name             = "${var.env}-codedeploy-app-${var.suffix}"
+  name             = "hb05-codedeploy-app"
   compute_platform = "Server"
 }
 
 resource "aws_codedeploy_deployment_group" "group" {
   app_name              = aws_codedeploy_app.codedeploy_app.name
-  deployment_group_name = "${var.env}-codedeploy-group-${var.suffix}"
+  deployment_group_name = "hb05-codedeploy-group"
   service_role_arn      = var.codedeploy_role_arn
 
   deployment_style {
@@ -20,13 +20,13 @@ resource "aws_codedeploy_deployment_group" "group" {
   
   ec2_tag_filter {
     key   = "Name"
-    value = "cicd-asg"
+    value = "hb05-asg"
     type  = "KEY_AND_VALUE"
   }
 
   load_balancer_info {
     target_group_info {
-      name = "${var.env}-alb-tg-${var.suffix}"
+      name = "hb05-alb-tg"
     }
   }
 }

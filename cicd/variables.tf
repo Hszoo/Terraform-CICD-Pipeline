@@ -1,6 +1,6 @@
 variable "project_name" {
   type    = string
-  default = "minipro3"
+  default = "hb05-terraform-cicd"
 }
 
 variable "region" {

@@ -5,31 +5,17 @@ terraform {
     }
   }
   backend "s3" {
-    bucket         = "cicd-bucket-2000-0903-0909"
+    bucket         = "terraform-remote-bucket-hszoo"
     key            = "stage/mysql/terraform.tfstate"
     region         = "us-east-2"
-    dynamodb_table = "cicdDynamodbTable"
+    dynamodb_table = "terraform-remote-table-hszoo"
     encrypt        = true
   }
 }
 
-data "terraform_remote_state" "cicd" {
-  backend = "s3"
-  config = {
-    bucket = "cicd-bucket-2000-0903-0909"
-    key    = "cicd/terraform.tfstate"
-    region = "us-east-2"
-  }
-}
-
-locals {
-  env    = data.terraform_remote_state.cicd.outputs.env
-  suffix = data.terraform_remote_state.cicd.outputs.suffix
-}
-
 ## RDS: Mysql 
 resource "aws_db_instance" "rds_mysql" {
-  identifier           = "${local.env}-mysql-${local.suffix}"
+  identifier           = "hb05-mysql"
   allocated_storage    = 10
   db_name              = "svcdb"
   engine               = "mysql"

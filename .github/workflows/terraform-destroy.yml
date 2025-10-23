@@ -31,6 +31,8 @@ jobs:
       - name: Destroy MySQL
         run: |
           cd stage/data-stores/mysql
+          source db_credentials.sh
+          env | grep TF_VAR 
           terraform init -input=false
           terraform destroy -auto-approve
 

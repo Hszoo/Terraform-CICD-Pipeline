@@ -9,7 +9,8 @@ cd - >/dev/null
 
 echo "💣 Destroying MySQL..."
 cd stage/data-stores/mysql
-bash -c "source db_credentials.sh && terraform init -input=false && terraform destroy -auto-approve"
+terraform init -input=false
+terraform destroy -auto-approve
 cd - >/dev/null
 
 echo "💣 Destroying CICD infrastructure..."

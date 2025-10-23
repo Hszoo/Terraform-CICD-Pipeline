@@ -19,6 +19,15 @@ provider "aws" {
   region = "us-east-2"
 }
 
+variable "env" {
+  type    = string
+  default = "svc"
+}
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 # 1) VPC, Subnet
 
 ## VPC
@@ -39,7 +48,7 @@ data "aws_subnets" "default" {
 ## Target Group
 ## TG (Target Group)
 resource "aws_lb_target_group" "lb_tg" {
-  name     = "my-cicd-alb-tg"
+  name     = "${var.env}-alb-tg-${random_id.suffix}"
   port     = 80
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.default.id
@@ -58,7 +67,7 @@ resource "aws_lb_target_group" "lb_tg" {
 
 ## Security Group
 resource "aws_security_group" "allow_http_traffic_sg" {
-  name        = "allow_80"
+  name        = "${var.env}-allow_80-${random_id.suffix}"
   description = "Allow 80 inbound traffic and all outbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -103,7 +112,7 @@ data "terraform_remote_state" "mysql_remote_state" {
 
 ## Launch Template
 resource "aws_launch_template" "ec2_lt" {
-  name = "myTemplate"
+  name = "${var.env}-launchTemplate-${random_id.suffix}"
   image_id = "ami-0199d4b5b8b4fde0e"
   instance_type = "t3.micro"
   vpc_security_group_ids = [aws_security_group.allow_http_traffic_sg.id]
@@ -150,7 +159,7 @@ resource "aws_autoscaling_group" "ec2_asg" {
 
 ## ALB Security Group 
 resource "aws_security_group" "alb_sg" {
-  name        = "myalb-SG"
+  name        = "${var.env}-alb-SG-${random_id.suffix}"
   description = "Allow 80 inbound traffic and all outbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -175,7 +184,7 @@ resource "aws_vpc_security_group_egress_rule" "alb_allow_80_egress_ipv4" {
 
 ## ALB (Application Load Balancer) 
 resource "aws_lb" "ec2_lb" {
-  name               = "myalb"
+  name               = "${var.env}-alb-${random_id.suffix}"
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = data.aws_subnets.default.ids

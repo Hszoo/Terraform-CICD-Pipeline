@@ -13,10 +13,19 @@ terraform {
   }
 }
 
+variable "env" {
+  type    = string
+  default = "mysql"
+}
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 ## RDS: Mysql 
 resource "aws_db_instance" "rds_mysql" {
   allocated_storage    = 10
-  db_name              = "mydb"
+  db_name              = "${var.env}-mydb-${random_id.suffix}"
   engine               = "mysql"
   engine_version       = "8.0"
   instance_class       = "db.t3.micro"

@@ -1,66 +1,62 @@
-name: Deploy Minipro3 CICD Pipeline (Staging)
+name: Full CICD - Destroy → Apply → Deploy
 
 on:
-  push:
-    branches: [ staging ]
+  workflow_dispatch:
 
 env:
   AWS_REGION: us-east-2
-  ECR_REPOSITORY: cicd-ecr
-  CODEDEPLOY_APP_NAME: minipro3-codedeploy-app
-  CODEDEPLOY_GROUP_NAME: minipro3-codedeploy-group
-  S3_BUCKET: service-bucket-2000-0903-0909
-  DEPLOY_PACKAGE_NAME: deploy-${{ github.sha }}.tar.gz
+  AWS_DEFAULT_REGION: us-east-2
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
 jobs:
-  deploy:
+  full-cicd:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: ⚪ Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: 🟢 Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
-          aws-region: ${{ env.AWS_REGION }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          terraform_version: 1.9.3
 
-      - name: Login to Amazon ECR
+      - name: 💣 Destroy All Terraform Resources
+        run: bash scripts/terraform-destroy.sh
+
+      - name: ⚙️ Apply All Terraform Resources
+        run: bash scripts/terraform-apply.sh
+
+      - name: 🐳 Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
-        run: docker build -t $ECR_REPOSITORY:latest .
+      - name: 🐳 Build Docker image
+        run: docker build -t minipro3-server .
 
-      - name: Tag image
-        run: docker tag $ECR_REPOSITORY:latest ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:latest
+      - name: 🐳 Tag Docker image
+        run: docker tag minipro3-server ${{ steps.login-ecr.outputs.registry }}/cicd-ecr:latest
 
-      - name: Push image
-        run: docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:latest
+      - name: ☁️ Push Docker image to ECR
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/cicd-ecr:latest
 
-      - name: Fix permissions
-        run: |
-          sudo chown -R $(whoami):$(whoami) .
-          chmod -R 755 scripts
-          chmod 644 docker-compose.yml
-
-      - name: Create deploy bundle
+      - name: 🧱 Prepare Deployment Bundle
         run: |
           mkdir -p deploy-files
           cp appspec.yml docker-compose.yml Dockerfile -t deploy-files
+          cp index.html -t deploy-files
           cp -r scripts deploy-files
-          tar -czvf $DEPLOY_PACKAGE_NAME -C deploy-files .
+          tar -czvf $GITHUB_SHA.tar.gz -C deploy-files .
 
-      - name: Upload to S3
-        run: aws s3 cp $DEPLOY_PACKAGE_NAME s3://$S3_BUCKET/$DEPLOY_PACKAGE_NAME
+      - name: ☁️ Upload to S3
+        run: aws s3 cp ./$GITHUB_SHA.tar.gz s3://service-bucket-2000-0903-0909/$GITHUB_SHA.tar.gz
 
-      - name: CodeDeploy deploy
+      - name: 🚀 Deploy via CodeDeploy
         run: |
           aws deploy create-deployment \
-            --application-name $CODEDEPLOY_APP_NAME \
-            --deployment-group-name $CODEDEPLOY_GROUP_NAME \
+            --application-name minipro3-codedeploy-app \
+            --deployment-group-name minipro3-codedeploy-group \
             --deployment-config-name CodeDeployDefault.AllAtOnce \
-            --s3-location bucket=$S3_BUCKET,bundleType=tgz,key=$DEPLOY_PACKAGE_NAME \
-            --region $AWS_REGION
+            --s3-location "bucket=service-bucket-2000-0903-0909,bundleType=tgz,key=$GITHUB_SHA.tar.gz" \
+            --region us-east-2

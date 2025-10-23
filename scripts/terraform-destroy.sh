@@ -1,0 +1,30 @@
+#!/bin/bash
+set -e
+
+echo "💣 Destroying WebServer Cluster..."
+cd stage/services/webserver-cluster
+terraform init -input=false
+terraform destroy -auto-approve
+cd - >/dev/null
+
+echo "💣 Destroying MySQL..."
+cd stage/data-stores/mysql
+source db_credentials.sh
+env | grep TF_VAR 
+terraform init -input=false
+terraform destroy -auto-approve
+cd - >/dev/null
+
+echo "💣 Destroying CICD infrastructure..."
+cd cicd
+terraform init -input=false
+terraform destroy -auto-approve
+cd - >/dev/null
+
+echo "💣 Destroying Global S3..."
+cd global/s3
+terraform init -input=false
+terraform destroy -auto-approve
+cd - >/dev/null
+
+echo "✅ All Terraform resources destroyed successfully!"

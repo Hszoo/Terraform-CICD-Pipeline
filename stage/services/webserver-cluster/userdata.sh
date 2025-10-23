@@ -1,14 +1,14 @@
 #!/bin/bash
-yum update -y
-yum install -y ruby wget
+sudo yum update -y
+sudo yum install -y ruby wget
 
-cd /home/ubuntu
-wget https://aws-codedeploy-us-east-2.s3.us-east-2.amazonaws.com/latest/install
-chmod +x ./install
+cd /home/ec2-user
+sudo wget https://aws-codedeploy-us-east-2.s3.us-east-2.amazonaws.com/latest/install
+sudo chmod +x ./install
 ./install auto
 
-systemctl enable --now codedeploy-agent
-systemctl start codedeploy-agent
+sudo systemctl enable --now codedeploy-agent
+sudo systemctl start codedeploy-agent
 
 cat > index.html <<EOF
 <!DOCTYPE html>

@@ -17,9 +17,12 @@ resource "aws_codedeploy_deployment_group" "group" {
     deployment_option = "WITH_TRAFFIC_CONTROL"
     deployment_type   = "IN_PLACE"
   }
-
-  autoscaling_groups = [aws_autoscaling_group.ec2_asg.name]
-
+  
+  ec2_tag_filter {
+    key   = "Name"
+    value = "cicd-asg"
+    type  = "KEY_AND_VALUE"
+  }
 
   load_balancer_info {
     target_group_info {

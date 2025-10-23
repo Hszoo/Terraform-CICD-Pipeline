@@ -36,7 +36,7 @@ module "s3" {
 
 module "codedeploy" {
   source              = "./codedeploy"
-  codedeploy_role_arn = module.iam.codedeploy_role_arn # ✅ IAM 모듈 출력값 전달
+  codedeploy_role_arn = module.iam.codedeploy_role_arn
 }
 
 output "codedeploy_app_name" {

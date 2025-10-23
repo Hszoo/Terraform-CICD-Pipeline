@@ -16,7 +16,7 @@ resource "aws_s3_bucket" "s3_artifact_bucket" {
   force_destroy = true
 
   tags = {
-    Name        = "mybucket"
+    Name        = "cicd-bucket"
     Environment = "Dev"
   }
 }

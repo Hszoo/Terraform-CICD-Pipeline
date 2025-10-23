@@ -51,6 +51,8 @@ module "s3" {
 
 module "codedeploy" {
   source              = "./codedeploy"
+  env    = var.env               
+  suffix = random_id.suffix.hex   
   codedeploy_role_arn = module.iam.codedeploy_role_arn
 }
 

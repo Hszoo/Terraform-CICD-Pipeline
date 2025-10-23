@@ -28,6 +28,25 @@ jobs:
       - name: ⚙️ Apply All Terraform Resources
         run: bash scripts/terraform-apply.sh
 
+      # 📦 Terraform Outputs 가져오기
+      - name: 📤 Get Terraform Outputs
+        id: tf_outputs
+        run: |
+          cd cicd
+          terraform init -input=false
+          terraform output -raw ecr_repository_name > ../ecr_repo.txt
+          terraform output -raw s3_bucket_name > ../s3_bucket.txt
+          terraform output -raw codedeploy_app_name > ../app_name.txt
+          terraform output -raw codedeploy_group_name > ../group_name.txt
+        shell: bash
+
+      - name: 🧾 Export Terraform Outputs to Env
+        run: |
+          echo "ECR_REPO=$(cat ecr_repo.txt)" >> $GITHUB_ENV
+          echo "S3_BUCKET=$(cat s3_bucket.txt)" >> $GITHUB_ENV
+          echo "CODEDEPLOY_APP=$(cat app_name.txt)" >> $GITHUB_ENV
+          echo "CODEDEPLOY_GROUP=$(cat group_name.txt)" >> $GITHUB_ENV
+
       # 🐳 Docker 빌드 & 배포
       - name: 🐳 Login to Amazon ECR
         id: login-ecr
@@ -37,11 +56,12 @@ jobs:
         run: docker build -t minipro3-server .
 
       - name: 🐳 Tag Docker image
-        run: docker tag minipro3-server ${{ steps.login-ecr.outputs.registry }}/cicd-ecr:latest
+        run: docker tag minipro3-server ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO }}:latest
 
       - name: ☁️ Push Docker image to ECR
-        run: docker push ${{ steps.login-ecr.outputs.registry }}/cicd-ecr:latest
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO }}:latest
 
+      # 📦 배포 번들 압축
       - name: 🧱 Prepare Deployment Bundle
         run: |
           mkdir -p deploy-files
@@ -50,14 +70,16 @@ jobs:
           cp -r scripts deploy-files
           tar -czvf $GITHUB_SHA.tar.gz -C deploy-files .
 
+      # ☁️ S3 업로드
       - name: ☁️ Upload to S3
-        run: aws s3 cp ./$GITHUB_SHA.tar.gz s3://service-bucket-2000-0903-0909/$GITHUB_SHA.tar.gz
+        run: aws s3 cp ./$GITHUB_SHA.tar.gz s3://${{ env.S3_BUCKET }}/$GITHUB_SHA.tar.gz
 
+      # 🚀 CodeDeploy 배포
       - name: 🚀 Deploy via CodeDeploy
         run: |
           aws deploy create-deployment \
-            --application-name minipro3-codedeploy-app \
-            --deployment-group-name minipro3-codedeploy-group \
+            --application-name $CODEDEPLOY_APP \
+            --deployment-group-name $CODEDEPLOY_GROUP \
             --deployment-config-name CodeDeployDefault.AllAtOnce \
-            --s3-location "bucket=service-bucket-2000-0903-0909,bundleType=tgz,key=$GITHUB_SHA.tar.gz" \
-            --region us-east-2
+            --s3-location "bucket=$S3_BUCKET,bundleType=tgz,key=$GITHUB_SHA.tar.gz" \
+            --region $AWS_REGION

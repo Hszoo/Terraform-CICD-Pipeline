@@ -18,9 +18,9 @@ hooks:
   ApplicationStop: # server stop 
     - location: scripts/stop-server.sh
       timeout: 60
-      runas: ec2-user
+      runas: ubuntu
 
   ApplicationStart: # server start
     - location: scripts/start-server.sh
       timeout: 60
-      runas: ec2-user
+      runas: ubuntu

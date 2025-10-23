@@ -3,10 +3,11 @@ yum update -y
 yum install -y ruby wget
 
 cd /home/ec2-user
-wget https://aws-codedeploy-${region}.s3.${region}.amazonaws.com/latest/install
+wget https://aws-codedeploy-us-east-2.s3.us-east-2.amazonaws.com/latest/install
 chmod +x ./install
 ./install auto
-systemctl enable codedeploy-agent
+
+systemctl enable --now codedeploy-agent
 systemctl start codedeploy-agent
 
 cat > index.html <<EOF

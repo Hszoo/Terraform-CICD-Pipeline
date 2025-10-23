@@ -18,11 +18,8 @@ resource "aws_codedeploy_deployment_group" "group" {
     deployment_type   = "IN_PLACE"
   }
 
-  ec2_tag_filter {
-    key   = "Name"
-    value = "cicd-asg"
-    type  = "KEY_AND_VALUE"
-  }
+  autoscaling_groups = [aws_autoscaling_group.ec2_asg.name]
+
 
   load_balancer_info {
     target_group_info {

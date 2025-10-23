@@ -29,8 +29,9 @@ locals {
 
 ## RDS: Mysql 
 resource "aws_db_instance" "rds_mysql" {
+  identifier           = "${local.env}-mysql-${local.suffix}"
   allocated_storage    = 10
-  db_name              = "${local.env}-mydb-${local.suffix}"
+  db_name              = "svcdb"
   engine               = "mysql"
   engine_version       = "8.0"
   instance_class       = "db.t3.micro"
@@ -38,4 +39,5 @@ resource "aws_db_instance" "rds_mysql" {
   password             = var.mysqlpasswd
   parameter_group_name = "default.mysql8.0"
   skip_final_snapshot  = true
+  deletion_protection = false
 }

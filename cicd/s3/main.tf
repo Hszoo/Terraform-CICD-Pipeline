@@ -4,7 +4,7 @@ resource "aws_kms_key" "cicd_kms_key" {
 }
 
 resource "aws_s3_bucket" "service_artifact_bucket" {
-  bucket = "service-bucket-2000-0903-0909"
+  bucket        = "service-bucket-2000-0903-0909"
   force_destroy = true
 
   tags = {
@@ -32,7 +32,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
 }
 
 resource "aws_s3_bucket_public_access_block" "access_block" {
-  bucket = aws_s3_bucket.service_artifact_bucket.id
+  bucket                  = aws_s3_bucket.service_artifact_bucket.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true

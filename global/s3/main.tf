@@ -53,9 +53,9 @@ resource "aws_s3_bucket_public_access_block" "s3_artifact_bucket_acceses_control
 
 ## Dynamodb 
 resource "aws_dynamodb_table" "dynamodb_artifact_table" {
-  name           = "cicdDynamodbTable"
-  hash_key       = "LockID"
-  billing_mode   = "PAY_PER_REQUEST"
+  name         = "cicdDynamodbTable"
+  hash_key     = "LockID"
+  billing_mode = "PAY_PER_REQUEST"
 
   attribute {
     name = "LockID"

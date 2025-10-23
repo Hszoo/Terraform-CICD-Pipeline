@@ -26,7 +26,7 @@ resource "aws_codedeploy_deployment_group" "group" {
 
   load_balancer_info {
     target_group_info {
-      name = "my-cicd-alb-tg" 
+      name = "my-cicd-alb-tg"
     }
   }
 }

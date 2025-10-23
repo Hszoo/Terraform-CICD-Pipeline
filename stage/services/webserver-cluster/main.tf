@@ -96,7 +96,7 @@ resource "aws_launch_template" "ec2_lt" {
   image_id = "ami-0199d4b5b8b4fde0e"
   instance_type = "t3.micro"
   vpc_security_group_ids = [aws_security_group.allow_http_traffic_sg.id]
-  
+
   iam_instance_profile {
     name = data.terraform_remote_state.cicd_remote_state.outputs.ec2_instance_profile
   }

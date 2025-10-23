@@ -85,7 +85,7 @@ data "terraform_remote_state" "cicd_remote_state" {
   backend = "s3"
   config = {
     bucket = "cicd-bucket-2000-0903-0909"
-    key    = "global/s3/terraform.tfstate"
+    key    = "cicd/terraform.tfstate"
     region = "us-east-2"
   }
 }

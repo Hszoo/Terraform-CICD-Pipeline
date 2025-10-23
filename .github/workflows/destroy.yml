@@ -6,6 +6,15 @@ on:
 jobs:
   destroy:
     runs-on: ubuntu-latest
-    steps:      
+
+    steps:
+      - name: ⚪ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.3
+
       - name: 💣 Destroy All Terraform Resources
         run: bash scripts/terraform-destroy.sh

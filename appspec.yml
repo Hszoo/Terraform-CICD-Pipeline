@@ -1,0 +1,26 @@
+---
+version: 0.0
+os: linux
+
+files:
+  - source: /
+    destination: /home/ec2-user/AWS-CICD-Pipeline
+    overwrite: yes
+
+permissions:
+  - object: /home/ec2-user/AWS-CICD-Pipeline
+    pattern: "**"
+    owner: ec2-user
+    group: ec2-user
+    mode: "755"
+
+hooks:
+  ApplicationStop: # server stop 
+    - location: scripts/stop-server.sh
+      timeout: 60
+      runas: ec2-user
+
+  ApplicationStart: # server start
+    - location: scripts/start-server.sh
+      timeout: 60
+      runas: ec2-user

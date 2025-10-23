@@ -1,0 +1,11 @@
+services:
+  hybrid05-server:
+    image: 329863774288.dkr.ecr.ap-northeast-2.amazonaws.com/hybrid05-server-registry:latest
+    container_name: hybrid05-server
+    ports:
+      - "8080:80"
+    networks:
+      - t4y
+
+networks:
+  t4y:

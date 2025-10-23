@@ -55,35 +55,3 @@ module "codedeploy" {
   suffix = random_id.suffix.hex   
   codedeploy_role_arn = module.iam.codedeploy_role_arn
 }
-
-output "codedeploy_app_name" {
-  value = module.codedeploy.app_name
-}
-
-output "ecr_repository_url" {
-  value = module.ecr.repository_url
-}
-
-output "env" {
-  value = var.env
-}
-
-output "suffix" {
-  value = random_id.suffix.hex
-}
-
-output "ecr_repository_name" {
-  value = aws_ecr_repository.cicd_ecr.name
-}
-
-output "s3_bucket_name" {
-  value = aws_s3_bucket.service_artifact_bucket.bucket
-}
-
-output "codedeploy_app_name" {
-  value = aws_codedeploy_app.codedeploy_app.name
-}
-
-output "codedeploy_group_name" {
-  value = aws_codedeploy_deployment_group.group.deployment_group_name
-}

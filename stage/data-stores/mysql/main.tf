@@ -13,19 +13,24 @@ terraform {
   }
 }
 
-variable "env" {
-  type    = string
-  default = "mysql"
+data "terraform_remote_state" "cicd" {
+  backend = "s3"
+  config = {
+    bucket = "cicd-bucket-2000-0903-0909"
+    key    = "cicd/terraform.tfstate"
+    region = "us-east-2"
+  }
 }
 
-resource "random_id" "suffix" {
-  byte_length = 4
+locals {
+  env    = data.terraform_remote_state.cicd.outputs.env
+  suffix = data.terraform_remote_state.cicd.outputs.suffix
 }
 
 ## RDS: Mysql 
 resource "aws_db_instance" "rds_mysql" {
   allocated_storage    = 10
-  db_name              = "${var.env}-mydb-${random_id.suffix}"
+  db_name              = "${local.env}-mydb-${locals.suffix}"
   engine               = "mysql"
   engine_version       = "8.0"
   instance_class       = "db.t3.micro"

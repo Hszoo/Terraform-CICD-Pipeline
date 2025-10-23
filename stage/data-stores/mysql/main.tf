@@ -7,7 +7,7 @@ terraform {
   backend "s3" {
     bucket         = "terraform-remote-bucket-hszoo"
     key            = "stage/mysql/terraform.tfstate"
-    region         = "us-east-2"
+    region         = "ap-northeast-2"
     dynamodb_table = "terraform-remote-table-hszoo"
     encrypt        = true
   }

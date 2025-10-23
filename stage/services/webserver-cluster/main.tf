@@ -7,7 +7,7 @@ terraform {
   backend "s3" {
     bucket         = "terraform-remote-bucket-hszoo"
     key            = "stage/service/terraform.tfstate"
-    region         = "us-east-2"
+    region         = "ap-northeast-2"
     dynamodb_table = "terraform-remote-table-hszoo"
     encrypt        = true
   }
@@ -15,7 +15,7 @@ terraform {
 
 provider "aws" {
   # Configuration options
-  region = "us-east-2"
+  region = "ap-northeast-2"
 }
 
 # 1) VPC, Subnet
@@ -86,7 +86,7 @@ data "terraform_remote_state" "cicd_remote_state" {
   config = {
     bucket = "terraform-remote-bucket-hszoo"
     key    = "cicd/terraform.tfstate"
-    region = "us-east-2"
+    region = "ap-northeast-2"
   }
 }
 
@@ -96,7 +96,7 @@ data "terraform_remote_state" "mysql_remote_state" {
   config = {
     bucket = "terraform-remote-bucket-hszoo"
     key    = "stage/mysql/terraform.tfstate"
-    region = "us-east-2"
+    region = "ap-northeast-2"
   }
 }
 
@@ -111,11 +111,7 @@ resource "aws_launch_template" "ec2_lt" {
     name = data.terraform_remote_state.cicd_remote_state.outputs.ec2_instance_profile
   }
 
-  user_data = base64encode(templatefile("userdata.sh", {
-    db_address  = data.terraform_remote_state.mysql_remote_state.outputs.db_address
-    db_port     = data.terraform_remote_state.mysql_remote_state.outputs.db_port
-    server_port = 80
-  }))
+  user_data = base64encode(file("userdata.sh"))
 
   lifecycle {
     create_before_destroy = true

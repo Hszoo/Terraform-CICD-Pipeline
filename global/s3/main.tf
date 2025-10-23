@@ -1,6 +1,6 @@
 provider "aws" {
   # Configuration options
-  region = "us-east-2"
+  region = "ap-northeast-2"
 }
 
 ## KMS KEY for S3 Bucket Encryption 

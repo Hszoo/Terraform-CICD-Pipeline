@@ -30,7 +30,7 @@ locals {
 ## RDS: Mysql 
 resource "aws_db_instance" "rds_mysql" {
   allocated_storage    = 10
-  db_name              = "${local.env}-mydb-${locals.suffix}"
+  db_name              = "${local.env}-mydb-${local.suffix}"
   engine               = "mysql"
   engine_version       = "8.0"
   instance_class       = "db.t3.micro"

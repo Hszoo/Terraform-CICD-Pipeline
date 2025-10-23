@@ -92,14 +92,17 @@ data "terraform_remote_state" "cicd_remote_state" {
 
 ## Launch Template
 resource "aws_launch_template" "ec2_lt" {
-  name                   = "myTemplate"
-  image_id               = "ami-0cfde0ea8edd312d4" # ubuntu
-  instance_type          = "t3.micro"
+  name = "myTemplate"
+  image_id = "ami-0cfde0ea8edd312d4"
+  instance_type = "t3.micro"
   vpc_security_group_ids = [aws_security_group.allow_http_traffic_sg.id]
+  iam_instance_profile {
+    name = data.terraform_remote_state.cicd_remote_state.outputs.ec2_instance_profile
+  }
 
   user_data = base64encode(templatefile("userdata.sh", {
-    db_address  = data.terraform_remote_state.cicd_remote_state.outputs.db_address
-    db_port     = data.terraform_remote_state.cicd_remote_state.outputs.db_port
+    db_address = data.terraform_remote_state.cicd_remote_state.outputs.db_address
+    db_port = data.terraform_remote_state.cicd_remote_state.outputs.db_port
     server_port = 8080
   }))
 
@@ -112,16 +115,22 @@ resource "aws_launch_template" "ec2_lt" {
 resource "aws_autoscaling_group" "ec2_asg" {
   vpc_zone_identifier = data.aws_subnets.default.ids
 
-  depends_on        = [aws_lb_target_group.lb_tg]
+  depends_on = [aws_lb_target_group.lb_tg]
   target_group_arns = [aws_lb_target_group.lb_tg.arn]
-
-  desired_capacity = 2
-  max_size         = 10
-  min_size         = 2
+  
+  desired_capacity   = 2
+  max_size           = 10
+  min_size           = 2
 
   launch_template {
     id      = aws_launch_template.ec2_lt.id
     version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "cicd-asg"
+    propagate_at_launch = true
   }
 }
 

@@ -11,12 +11,12 @@ resource "aws_kms_key" "my_kms_key" {
 
 ## Create S3 Bucket 
 resource "aws_s3_bucket" "s3_artifact_bucket" {
-  bucket = "cicd-bucket-2000-0903-0909"
+  bucket = "terraform-remote-bucket-hszoo"
 
   force_destroy = true
 
   tags = {
-    Name        = "mybucket"
+    Name        = "terraform-remote-bucket-hszoo"
     Environment = "Dev"
   }
 }
@@ -53,7 +53,7 @@ resource "aws_s3_bucket_public_access_block" "s3_artifact_bucket_acceses_control
 
 ## Dynamodb 
 resource "aws_dynamodb_table" "dynamodb_artifact_table" {
-  name         = "cicdDynamodbTable"
+  name         = "terraform-remote-table-hszoo"
   hash_key     = "LockID"
   billing_mode = "PAY_PER_REQUEST"
 

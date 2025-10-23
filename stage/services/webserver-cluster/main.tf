@@ -1,16 +1,15 @@
-##############################################
-# ALB - TargetGroup(:ASG) Attachment - EC2 
-##############################################
-# 1) VPC, Subnet
-# 2) TG, SG, Launch Template, ASG
-# 3) ALB, ALB Listener, ALB Listener Rules
-##############################################
-
 terraform {
   required_providers {
     aws = {
       source = "hashicorp/aws"
     }
+  }
+  backend "s3" {
+    bucket         = "terraform-remote-bucket-hszoo"
+    key            = "stage/service/terraform.tfstate"
+    region         = "us-east-2"
+    dynamodb_table = "terraform-remote-table-hszoo"
+    encrypt        = true
   }
 }
 
@@ -39,8 +38,8 @@ data "aws_subnets" "default" {
 ## Target Group
 ## TG (Target Group)
 resource "aws_lb_target_group" "lb_tg" {
-  name     = "my-cicd-alb-tg"
-  port     = 8080
+  name     = "hb05-alb-tg"
+  port     = 80
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.default.id
 
@@ -53,54 +52,69 @@ resource "aws_lb_target_group" "lb_tg" {
     healthy_threshold   = 2
     unhealthy_threshold = 2
   }
+  
 }
 
 ## Security Group
 resource "aws_security_group" "allow_http_traffic_sg" {
-  name        = "allow_8080"
-  description = "Allow 8080 inbound traffic and all outbound traffic"
+  name        = "hb05-sg-allow_80"
+  description = "Allow 80 inbound traffic and all outbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
   tags = {
-    Name = "allow_8080"
+    Name = "allow_80"
   }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "allow_8080_ingress_ipv4" {
+resource "aws_vpc_security_group_ingress_rule" "ec2_allow_80_ingress_ipv4" {
   security_group_id = aws_security_group.allow_http_traffic_sg.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 8080
-  to_port           = 8080
+  from_port         = 80
+  to_port           = 80
   ip_protocol       = "tcp"
 }
 
-resource "aws_vpc_security_group_egress_rule" "allow_8080_egress_ipv4" {
+resource "aws_vpc_security_group_egress_rule" "ec2_80_egress_ipv4" {
   security_group_id = aws_security_group.allow_http_traffic_sg.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
 
-## Remote state
+## remote state for CICD (IAM)
 data "terraform_remote_state" "cicd_remote_state" {
   backend = "s3"
   config = {
-    bucket = "cicd-bucket-2000-0903-0909"
-    key    = "global/s3/terraform.tfstate"
+    bucket = "terraform-remote-bucket-hszoo"
+    key    = "cicd/terraform.tfstate"
+    region = "us-east-2"
+  }
+}
+
+## remote state for MySQL
+data "terraform_remote_state" "mysql_remote_state" {
+  backend = "s3"
+  config = {
+    bucket = "terraform-remote-bucket-hszoo"
+    key    = "stage/mysql/terraform.tfstate"
     region = "us-east-2"
   }
 }
 
 ## Launch Template
 resource "aws_launch_template" "ec2_lt" {
-  name                   = "myTemplate"
-  image_id               = "ami-0cfde0ea8edd312d4" # ubuntu
-  instance_type          = "t3.micro"
+  name = "hb05-launch-template"
+  image_id = "ami-0199d4b5b8b4fde0e"
+  instance_type = "t3.micro"
   vpc_security_group_ids = [aws_security_group.allow_http_traffic_sg.id]
 
+  iam_instance_profile {
+    name = data.terraform_remote_state.cicd_remote_state.outputs.ec2_instance_profile
+  }
+
   user_data = base64encode(templatefile("userdata.sh", {
-    db_address  = data.terraform_remote_state.cicd_remote_state.outputs.db_address
-    db_port     = data.terraform_remote_state.cicd_remote_state.outputs.db_port
-    server_port = 8080
+    db_address  = data.terraform_remote_state.mysql_remote_state.outputs.db_address
+    db_port     = data.terraform_remote_state.mysql_remote_state.outputs.db_port
+    server_port = 80
   }))
 
   lifecycle {
@@ -112,16 +126,22 @@ resource "aws_launch_template" "ec2_lt" {
 resource "aws_autoscaling_group" "ec2_asg" {
   vpc_zone_identifier = data.aws_subnets.default.ids
 
-  depends_on        = [aws_lb_target_group.lb_tg]
+  depends_on = [aws_lb_target_group.lb_tg]
   target_group_arns = [aws_lb_target_group.lb_tg.arn]
-
-  desired_capacity = 2
-  max_size         = 10
-  min_size         = 2
+  
+  desired_capacity   = 2
+  max_size           = 10
+  min_size           = 2
 
   launch_template {
     id      = aws_launch_template.ec2_lt.id
     version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "hb05-asg"
+    propagate_at_launch = true
   }
 }
 
@@ -129,7 +149,7 @@ resource "aws_autoscaling_group" "ec2_asg" {
 
 ## ALB Security Group 
 resource "aws_security_group" "alb_sg" {
-  name        = "myalb-SG"
+  name        = "hb05-alb-sg"
   description = "Allow 80 inbound traffic and all outbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -138,7 +158,7 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "allow_80_ingress_ipv4" {
+resource "aws_vpc_security_group_ingress_rule" "alb_allow_80_ingress_ipv4" {
   security_group_id = aws_security_group.alb_sg.id
   cidr_ipv4         = "0.0.0.0/0"
   from_port         = 80
@@ -146,7 +166,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_80_ingress_ipv4" {
   ip_protocol       = "tcp"
 }
 
-resource "aws_vpc_security_group_egress_rule" "allow_80_egress_ipv4" {
+resource "aws_vpc_security_group_egress_rule" "alb_allow_80_egress_ipv4" {
   security_group_id = aws_security_group.alb_sg.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
@@ -154,7 +174,7 @@ resource "aws_vpc_security_group_egress_rule" "allow_80_egress_ipv4" {
 
 ## ALB (Application Load Balancer) 
 resource "aws_lb" "ec2_lb" {
-  name               = "myalb"
+  name               = "hb05-alb"
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = data.aws_subnets.default.ids

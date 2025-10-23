@@ -33,17 +33,20 @@ resource "random_id" "suffix" {
 
 module "iam" {
   source = "./iam"
-  suffix = random_id.suffix.hex
+  env    = var.env               
+  suffix = random_id.suffix.hex   
 }
 
 module "ecr" {
   source = "./ecr"
-  suffix = random_id.suffix.hex
+  env    = var.env               
+  suffix = random_id.suffix.hex   
 }
 
 module "s3" {
   source = "./s3"
-  suffix = random_id.suffix.hex
+  env    = var.env               
+  suffix = random_id.suffix.hex   
 }
 
 module "codedeploy" {

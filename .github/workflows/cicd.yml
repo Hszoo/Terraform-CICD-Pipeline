@@ -1,8 +1,8 @@
-name: Deploy Minipro3 CICD Pipeline
+name: Deploy Minipro3 CICD Pipeline (Staging)
 
 on:
   push:
-    branches: [ staging ]   # staging 브랜치에 push 시 배포
+    branches: [ staging ]
 
 env:
   AWS_REGION: us-east-2

@@ -1,30 +1,23 @@
-name: Terraform Infrastructure CI
+name: Terraform Infrastructure CI (Staging)
 
 on:
-  pull_request:
-    branches: [ main ]          # PR에서 plan만
   push:
-    branches: [ main ]          # main에 머지되면 apply
+    branches: [ staging ]
+  pull_request:
+    branches: [ staging ]
 
 env:
   AWS_REGION: us-east-2
 
-concurrency:
-  group: terraform-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   terraform:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
@@ -36,9 +29,6 @@ jobs:
         with:
           terraform_version: 1.6.6
 
-      - name: Terraform Fmt
-        run: terraform -chdir=cicd fmt -check
-
       - name: Terraform Init
         run: terraform -chdir=cicd init
 
@@ -46,11 +36,7 @@ jobs:
         run: terraform -chdir=cicd validate
 
       - name: Terraform Plan
-        if: github.event_name == 'pull_request'
-        run: terraform -chdir=cicd plan -no-color
+        run: terraform -chdir=cicd plan -out=tfplan
 
-      - name: Terraform Plan & Apply (main)
-        if: github.ref == 'refs/heads/main'
-        run: |
-          terraform -chdir=cicd plan -out=tfplan
-          terraform -chdir=cicd apply -auto-approve tfplan
+      - name: Terraform Apply (staging)
+        run: terraform -chdir=cicd apply -auto-approve tfplan

@@ -4,7 +4,7 @@ resource "aws_kms_key" "cicd_kms_key" {
 }
 
 resource "aws_s3_bucket" "service_artifact_bucket" {
-  bucket        = "service-bucket-2000-0903-0909"
+  bucket        = "${var.env}-bucket-${var.suffix}"
   force_destroy = true
 
   tags = {

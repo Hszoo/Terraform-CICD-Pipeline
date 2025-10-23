@@ -18,20 +18,32 @@ provider "aws" {
   region = "us-east-2"
 }
 
+variable "env" {
+  type    = string
+  default = "cicd"
+}
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 # ------------------------------
 # Module Definitions
 # ------------------------------
 
 module "iam" {
   source = "./iam"
+  suffix = random_id.suffix.hex
 }
 
 module "ecr" {
   source = "./ecr"
+  suffix = random_id.suffix.hex
 }
 
 module "s3" {
   source = "./s3"
+  suffix = random_id.suffix.hex
 }
 
 module "codedeploy" {
